@@ -8,6 +8,7 @@ module Fog
 
     class Error < Fog::Errors::Error; end
     class NotFound < Fog::Errors::NotFound; end
+    class QuotaExceeded < Fog::Errors::Error; end
 
     module NoLeakInspector
       def inspect

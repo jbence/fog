@@ -6,8 +6,8 @@ module Fog
       extend Fog::AWS::CredentialFetcher::ServiceMethods
 
       class IdentifierTaken < Fog::Errors::Error; end
-
       class AuthorizationAlreadyExists < Fog::Errors::Error; end
+      class InvalidState < Fog::Errors::Error; end
 
       requires :aws_access_key_id, :aws_secret_access_key
       recognizes :region, :host, :path, :port, :scheme, :persistent, :use_iam_profile, :aws_session_token, :aws_credentials_expire_at, :version
@@ -49,7 +49,8 @@ module Fog
 
       request :create_db_subnet_group
       request :describe_db_subnet_groups
-      # TODO: :delete_db_subnet_group, :modify_db_subnet_group
+      request :delete_db_subnet_group
+      request :modify_db_subnet_group
 
       request :describe_db_log_files
       request :download_db_logfile_portion
@@ -225,12 +226,16 @@ module Fog
               end
             else
               raise case match[:code]
-                    when 'DBInstanceNotFound', 'DBParameterGroupNotFound', 'DBSnapshotNotFound', 'DBSecurityGroupNotFound'
+                    when 'DBInstanceNotFound', 'DBParameterGroupNotFound', 'DBSnapshotNotFound', 'DBSecurityGroupNotFound', 'DBSubnetGroupNotFound'
                       Fog::AWS::RDS::NotFound.slurp(error, match[:message])
                     when 'DBParameterGroupAlreadyExists'
                       Fog::AWS::RDS::IdentifierTaken.slurp(error, match[:message])
                     when 'AuthorizationAlreadyExists'
                       Fog::AWS::RDS::AuthorizationAlreadyExists.slurp(error, match[:message])
+                    when 'InvalidDBSubnetGroupState'
+                      Fog::AWS::RDS::InvalidState.slurp(error, match[:message])
+                    when 'DBSubnetQuotaExceeded'
+                      Fog::AWS::RDS::QuotaExceeded.slurp(error, match[:message])
                     else
                       Fog::AWS::RDS::Error.slurp(error, "#{match[:code]} => #{match[:message]}")
                     end
